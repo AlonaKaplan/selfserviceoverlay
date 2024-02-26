@@ -28,6 +28,10 @@ OVN_K8S_REPO_COMMIT="b4388c5a8766e35d5ae5d63833fd7ee00cf0592f"
 OVN_K8S_REPO_PATH="${SCRIPT_PATH}/_ovn-k8s/"
 OVN_K8S_KIND="${SCRIPT_PATH}/_ovn-k8s/contrib"
 
+KIND_LOCAL_REGISTRY_NAME="registry-ovn-k8s"
+KIND_LOCAL_REGISTRY_PORT=5000
+KIND_LOCAL_REGISTRY_VOLUME="ovn-k8s"
+
 if [ ! -d ${OVN_K8S_REPO_PATH} ]; then
     git clone ${OVN_K8S_REPO} --branch ${OVN_K8S_BRANCH} --single-branch  ${OVN_K8S_REPO_PATH}
     pushd ${OVN_K8S_REPO_PATH}
@@ -35,12 +39,30 @@ if [ ! -d ${OVN_K8S_REPO_PATH} ]; then
     popd
 fi
 
+setup_local_registry() {
+    if [ "$(${OCI_BIN} inspect -f '{{.State.Running}}' "${KIND_LOCAL_REGISTRY_NAME}" 2>/dev/null || true)" != 'true' ]; then
+        ${OCI_BIN} run -d --restart=always --name "${KIND_LOCAL_REGISTRY_NAME}"  \
+            -p "127.0.0.1:${KIND_LOCAL_REGISTRY_PORT}:5000" \
+            -v ${KIND_LOCAL_REGISTRY_VOLUME}:/var/lib/registry \
+            registry:2
+    fi
+}
+
+teardown_local_registry() {
+    ${OCI_BIN} stop ${KIND_LOCAL_REGISTRY_NAME} || true
+    ${OCI_BIN} rm   ${KIND_LOCAL_REGISTRY_NAME} || true
+}
+
 cluster_up() {
+    setup_local_registry
+
     (
         cd "${OVN_K8S_KIND}"
+        export KIND_LOCAL_REGISTRY_NAME
         ./kind.sh \
             --experimental-provider ${OCI_BIN} \
             --num-workers 0 \
+            --local-kind-registry \
             --multi-network-enable \
             $(NULL)
     )
@@ -50,6 +72,8 @@ cluster_down() {
     (
         cd "${OVN_K8S_KIND}"
         ./kind.sh --experimental-provider ${OCI_BIN} --delete
+
+        teardown_local_registry
     )
 }
 
