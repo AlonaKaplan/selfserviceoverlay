@@ -32,6 +32,9 @@ KIND_LOCAL_REGISTRY_NAME="registry-ovn-k8s"
 KIND_LOCAL_REGISTRY_PORT=5000
 KIND_LOCAL_REGISTRY_VOLUME="ovn-k8s"
 
+OVN_IMAGE_REMOTE_TAG="ghcr.io/ovn-org/ovn-kubernetes/ovn-kube-f:master"
+OVN_IMAGE_TAG="localhost:${KIND_LOCAL_REGISTRY_PORT}/ovn-org/ovn-kubernetes/ovn-kube-f:master"
+
 if [ ! -d ${OVN_K8S_REPO_PATH} ]; then
     git clone ${OVN_K8S_REPO} --branch ${OVN_K8S_BRANCH} --single-branch  ${OVN_K8S_REPO_PATH}
     pushd ${OVN_K8S_REPO_PATH}
@@ -53,8 +56,25 @@ teardown_local_registry() {
     ${OCI_BIN} rm   ${KIND_LOCAL_REGISTRY_NAME} || true
 }
 
+pull_ovn_k8s_image() {
+    # pull the image to container runtime registry to enable kind.sh detect and use its digest in ovn-k8s manifests
+    if ! ${OCI_BIN} inspect "${OVN_IMAGE_TAG}" &> /dev/null; then
+        ${OCI_BIN} pull "${OVN_IMAGE_REMOTE_TAG}"
+        ${OCI_BIN} tag "${OVN_IMAGE_REMOTE_TAG}" "${OVN_IMAGE_TAG}"
+    fi
+
+    # store the image in tests local registry
+    local -r runtime_registry_tag="docker-daemon:${OVN_IMAGE_TAG}"
+    local -r local_registry_tag="docker://${OVN_IMAGE_TAG}"
+    if ! skopeo inspect --tls-verify=false "${local_registry_tag}" &> /dev/null; then
+        skopeo copy "${runtime_registry_tag}" --dest-tls-verify=false "${local_registry_tag}"
+    fi
+}
+
 cluster_up() {
     setup_local_registry
+
+    pull_ovn_k8s_image
 
     (
         cd "${OVN_K8S_KIND}"
@@ -63,6 +83,7 @@ cluster_up() {
             --experimental-provider ${OCI_BIN} \
             --num-workers 0 \
             --local-kind-registry \
+            --ovn-image ${OVN_IMAGE_TAG} \
             --multi-network-enable \
             $(NULL)
     )
