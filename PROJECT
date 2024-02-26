@@ -1,0 +1,9 @@
+domain: ovn.org
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: selfserviceoverlay
+repo: github.com/AlonaKaplan/selfserviceoverlay
+version: "3"
