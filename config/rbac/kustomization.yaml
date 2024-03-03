@@ -7,3 +7,5 @@ resources:
 - service_account.yaml
 - role.yaml
 - role_binding.yaml
+- net_attach_def_editor_role.yaml
+- net_attach_def_editor_role_binding.yaml
