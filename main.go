@@ -62,7 +62,6 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     "0", // disable metrics
-		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 	})
 	if err != nil {
