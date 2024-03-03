@@ -28,7 +28,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1"
@@ -49,8 +48,6 @@ func init() {
 }
 
 func main() {
-	var probeAddr string
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -60,9 +57,8 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     "0", // disable metrics
-		HealthProbeBindAddress: probeAddr,
+		Scheme:             scheme,
+		MetricsBindAddress: "0", // disable metrics
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -77,15 +73,6 @@ func main() {
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
-
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
