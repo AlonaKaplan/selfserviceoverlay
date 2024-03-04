@@ -4,6 +4,8 @@ IMAGE_TAG ?= devel
 # Image URL to use all building/pushing image targets
 IMG ?= "${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
+OCI_BIN ?= podman
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 
@@ -71,13 +73,13 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-.PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+.PHONY: oci-build
+oci-build: test ## Build containerf image with the manager.
+	$(OCI_BIN) build -t ${IMG} .
 
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+.PHONY: oci-push
+oci-push: ## Push container image with the manager.
+	$(OCI_BIN) push ${IMG}
 
 ##@ Deployment
 
@@ -147,4 +149,4 @@ kind-push:
 	$(KIND_BIN) load image-archive --name=${CLUSTER_NAME} ${IMAGE_TAR}
 
 .PHONY: cluster-sync
-cluster-sync: undeploy uninstall manifests generate fmt vet docker-build kind-push install deploy
+cluster-sync: undeploy uninstall manifests generate fmt vet oci-build kind-push install deploy
