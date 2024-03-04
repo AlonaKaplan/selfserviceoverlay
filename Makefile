@@ -14,6 +14,12 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# CONTAINER_TOOL defines the container tool to be used for building images.
+# Be aware that the target commands are only tested with Docker which is
+# scaffolded by default. However, you might want to replace it to use other
+# tools. (i.e. podman)
+CONTAINER_TOOL ?= docker
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
@@ -73,11 +79,11 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	$(CONTAINER_TOOL) build -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+	$(CONTAINER_TOOL) push ${IMG}
 
 ##@ Deployment
 
@@ -144,7 +150,7 @@ cluster-down:
 IMAGE_TAR = "./bin/img.tar"
 .PHONY: kind-push
 kind-push:
-	docker save ${IMG} -o ${IMAGE_TAR}
+	$(CONTAINER_TOOL) save ${IMG} -o ${IMAGE_TAR}
 	$(KIND) load image-archive --name=${CLUSTER_NAME} ${IMAGE_TAR}
 
 .PHONY: cluster-sync
