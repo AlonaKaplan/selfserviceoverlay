@@ -46,8 +46,12 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 	BUNDLE_GEN_FLAGS += --use-image-digests
 endif
 
+IMAGE_REGISTRY ?= localhost
+IMAGE_NAME ?= overlay-network-controller
+IMAGE_TAG ?= devel
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= "${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 
@@ -145,17 +149,13 @@ docker-buildx: test ## Build and push docker image for the manager for cross-pla
 
 ##@ Deployment
 
-ifndef ignore-not-found
-  ignore-not-found = false
-endif
-
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=true -f -
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
@@ -163,8 +163,8 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=true -f -
 
 ##@ Build Dependencies
 
@@ -261,3 +261,14 @@ cluster-up:
 .PHONY: cluster-down
 cluster-down:
 	./automation/cluster.sh --down
+
+KIND_BIN ?= kind
+CLUSTER_NAME ?= ovn
+IMAGE_TAR = "./bin/img.tar"
+.PHONY: kind-push
+kind-push:
+	docker save ${IMG} -o ${IMAGE_TAR}
+	$(KIND_BIN) load image-archive --name=${CLUSTER_NAME} ${IMAGE_TAR}
+
+.PHONY: cluster-sync
+cluster-sync: undeploy uninstall manifests generate fmt vet docker-build kind-push install deploy
