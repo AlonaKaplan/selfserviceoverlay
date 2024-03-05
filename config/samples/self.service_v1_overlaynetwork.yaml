@@ -1,12 +1,6 @@
 apiVersion: self.service.ovn.org/v1
 kind: OverlayNetwork
 metadata:
-  labels:
-    app.kubernetes.io/name: overlaynetwork
-    app.kubernetes.io/instance: overlaynetwork-sample
-    app.kubernetes.io/part-of: selfserviceoverlay
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: selfserviceoverlay
   name: overlaynetwork-sample
 spec:
   # TODO(user): Add fields here
