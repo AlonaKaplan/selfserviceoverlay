@@ -1,0 +1,12 @@
+---
+kind: ClusterRole
+metadata:
+  name: net-attach-def-editor
+rules:
+- apiGroups:
+  - k8s.cni.cncf.io
+  resources:
+  - network-attachment-definitions
+  verbs:
+  - create
+  - delete
