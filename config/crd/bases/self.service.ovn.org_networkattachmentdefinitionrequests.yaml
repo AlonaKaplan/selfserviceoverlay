@@ -5,20 +5,21 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: overlaynetworks.self.service.ovn.org
+  name: networkattachmentdefinitionrequests.self.service.ovn.org
 spec:
   group: self.service.ovn.org
   names:
-    kind: OverlayNetwork
-    listKind: OverlayNetworkList
-    plural: overlaynetworks
-    singular: overlaynetwork
+    kind: NetworkAttachmentDefinitionRequest
+    listKind: NetworkAttachmentDefinitionRequestList
+    plural: networkattachmentdefinitionrequests
+    singular: networkattachmentdefinitionrequest
   scope: Namespaced
   versions:
-  - name: v1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: OverlayNetwork is the Schema for the overlaynetworks API
+        description: NetworkAttachmentDefinitionRequest is the Schema for the network
+          attachment definition request API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,12 +34,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: OverlayNetworkSpec defines the desired state of OverlayNetwork
+            description: NetworkAttachmentDefinitionRequestSpec defines the desired
+              state of NetworkAttachmentDefinitionRequest
             properties:
-              foo:
-                description: Foo is an example field of OverlayNetwork. Edit overlaynetwork_types.go
-                  to remove/update
+              logicalNetworkName:
                 type: string
+              name:
+                type: string
+              type:
+                type: string
+            required:
+            - logicalNetworkName
+            - name
             type: object
           status:
             description: OverlayNetworkStatus defines the observed state of OverlayNetwork

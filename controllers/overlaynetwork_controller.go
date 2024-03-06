@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1"
+	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1alpha1"
 )
 
 // OverlayNetworkReconciler reconciles a OverlayNetwork object
@@ -57,6 +57,6 @@ func (r *OverlayNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // SetupWithManager sets up the controller with the Manager.
 func (r *OverlayNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&selfservicev1.OverlayNetwork{}).
+		For(&selfservicev1.NetworkAttachmentDefinitionRequest{}).
 		Complete(r)
 }

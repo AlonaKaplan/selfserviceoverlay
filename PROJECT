@@ -7,12 +7,12 @@ projectName: selfserviceoverlay
 repo: github.com/AlonaKaplan/selfserviceoverlay
 resources:
 - api:
-    crdVersion: v1
+    crdVersion: v1alpha1
     namespaced: true
   controller: true
-  domain: ovn.org
-  group: self.service
-  kind: OverlayNetwork
-  path: github.com/AlonaKaplan/selfserviceoverlay/api/v1
+  domain: kubevirt.org
+  group: selfserviceoverlay
+  kind: NetworkAttachmentDefinitionRequest
+  path: github.com/AlonaKaplan/selfserviceoverlay/api/v1alpha1
   version: v1
 version: "3"
