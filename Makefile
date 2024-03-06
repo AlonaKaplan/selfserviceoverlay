@@ -254,6 +254,9 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+export KIND ?= $(LOCALBIN)/kind
+export CLUSTER_NAME ?= ovn
+
 .PHONY: cluster-up
 cluster-up:
 	./automation/cluster.sh --up
@@ -262,13 +265,11 @@ cluster-up:
 cluster-down:
 	./automation/cluster.sh --down
 
-KIND_BIN ?= kind
-CLUSTER_NAME ?= ovn
 IMAGE_TAR = "./bin/img.tar"
 .PHONY: kind-push
 kind-push:
 	docker save ${IMG} -o ${IMAGE_TAR}
-	$(KIND_BIN) load image-archive --name=${CLUSTER_NAME} ${IMAGE_TAR}
+	$(KIND) load image-archive --name=${CLUSTER_NAME} ${IMAGE_TAR}
 
 .PHONY: cluster-sync
 cluster-sync: undeploy uninstall manifests generate fmt vet docker-build kind-push install deploy
