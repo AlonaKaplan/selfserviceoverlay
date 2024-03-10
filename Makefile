@@ -272,3 +272,7 @@ kind-push:
 
 .PHONY: cluster-sync
 cluster-sync: undeploy uninstall manifests generate fmt vet docker-build kind-push install deploy
+
+.PHONY: functest
+functest:
+	go test -v ./e2e/...
