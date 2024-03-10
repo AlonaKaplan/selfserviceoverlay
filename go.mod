@@ -3,6 +3,7 @@ module github.com/AlonaKaplan/selfserviceoverlay
 go 1.19
 
 require (
+	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.4.0
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.19.0
 	k8s.io/apimachinery v0.25.0
