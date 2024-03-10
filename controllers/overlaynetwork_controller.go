@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -66,7 +67,10 @@ func (r *OverlayNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, fmt.Errorf("failed to get OverlayNetwrok %q: %v", req.NamespacedName, err)
 	}
 
-	netAttachDef := renderNetAttachDef(overlayNetwork)
+	netAttachDef, err := renderNetAttachDef(overlayNetwork)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to render NetworkAttachmentDefinition for OverlayNetwrok %q: %v", req.NamespacedName, err)
+	}
 	if err := r.Create(ctx, netAttachDef); err != nil {
 		if errors.IsAlreadyExists(err) {
 			logger.Info("NetworkAttachmentDefinition [%q] already exist", req.NamespacedName)
@@ -84,11 +88,21 @@ func (r *OverlayNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func renderNetAttachDef(overlayNet *selfservicev1.OverlayNetwork) *netv1.NetworkAttachmentDefinition {
+func renderNetAttachDef(overlayNet *selfservicev1.OverlayNetwork) (*netv1.NetworkAttachmentDefinition, error) {
 	const netAttachDefKind = "NetworkAttachmentDefinition"
 	const netAttachDefAPIVer = "v1"
-	// TODO: set config
-	netConf := ""
+
+	cniNetConf := map[string]interface{}{
+		"type":             "ovn-k8s-cni-overlay",
+		"name":             overlayNet.GetName(),
+		"netAttachDefName": overlayNet.Namespace + "/" + overlayNet.Name,
+		"topology":         "layer2",
+	}
+	cniNetConfRaw, err := json.Marshal(cniNetConf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &netv1.NetworkAttachmentDefinition{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: netAttachDefAPIVer,
@@ -108,7 +122,7 @@ func renderNetAttachDef(overlayNet *selfservicev1.OverlayNetwork) *netv1.Network
 			},
 		},
 		Spec: netv1.NetworkAttachmentDefinitionSpec{
-			Config: netConf,
+			Config: string(cniNetConfRaw),
 		},
-	}
+	}, nil
 }
