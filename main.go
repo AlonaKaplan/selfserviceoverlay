@@ -33,6 +33,8 @@ import (
 	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1"
 	"github.com/AlonaKaplan/selfserviceoverlay/controllers"
 	//+kubebuilder:scaffold:imports
+
+	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned/scheme"
 )
 
 var (
@@ -45,6 +47,8 @@ func init() {
 
 	utilruntime.Must(selfservicev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
+
+	utilruntime.Must(netv1.AddToScheme(scheme))
 }
 
 func main() {
