@@ -20,34 +20,43 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // OverlayNetworkSpec defines the desired state of OverlayNetwork
 type OverlayNetworkSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Name is the overlay network identifier.
+	// The actual overlay network is prefixed with the current namespace
+	// to assure uniqueness across namespaces.
+	Name string `json:"name"`
 
-	// Foo is an example field of OverlayNetwork. Edit overlaynetwork_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
+	// The maximum transmission unit (MTU).
+	// The default value, 1300, is automatically set by the kernel.
+	// +optional
+	Mtu string `json:"mtu,omitempty"`
 
-// OverlayNetworkStatus defines the observed state of OverlayNetwork
-type OverlayNetworkStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// The subnet to use for the network across the cluster.
+	// Only include the CIDR for the node. E.g. 10.100.200.0/24.
+	//
+	// IPv6 (2001:DBB::/64) and dual-stack (192.168.100.0/24,2001:DBB::/64) subnets are supported.
+	//
+	// When omitted, the logical switch implementing the network only provides layer 2 communication,
+	// and users must configure IP addresses for the pods.
+	// Port security only prevents MAC spoofing.
+	// +optional
+	Subnets string `json:"subnets,omitempty"`
+
+	// A comma-separated list of CIDRs and IP addresses.
+	// IP addresses are removed from the assignable IP address pool and are never passed to the pods.
+	// +optional
+	ExcludeSubnets string `json:"excludeSubnets,omitempty"`
 }
 
 //+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
 
 // OverlayNetwork is the Schema for the overlaynetworks API
 type OverlayNetwork struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OverlayNetworkSpec   `json:"spec,omitempty"`
-	Status OverlayNetworkStatus `json:"status,omitempty"`
+	Spec OverlayNetworkSpec `json:"spec,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -35,16 +35,32 @@ spec:
           spec:
             description: OverlayNetworkSpec defines the desired state of OverlayNetwork
             properties:
-              foo:
-                description: Foo is an example field of OverlayNetwork. Edit overlaynetwork_types.go
-                  to remove/update
+              excludeSubnets:
+                description: A comma-separated list of CIDRs and IP addresses. IP
+                  addresses are removed from the assignable IP address pool and are
+                  never passed to the pods.
                 type: string
-            type: object
-          status:
-            description: OverlayNetworkStatus defines the observed state of OverlayNetwork
+              mtu:
+                description: The maximum transmission unit (MTU). The default value,
+                  1300, is automatically set by the kernel.
+                type: string
+              name:
+                description: Name is the overlay network identifier. The actual overlay
+                  network is prefixed with the current namespace to assure uniqueness
+                  across namespaces.
+                type: string
+              subnets:
+                description: "The subnet to use for the network across the cluster.
+                  Only include the CIDR for the node. E.g. 10.100.200.0/24. \n IPv6
+                  (2001:DBB::/64) and dual-stack (192.168.100.0/24,2001:DBB::/64)
+                  subnets are supported. \n When omitted, the logical switch implementing
+                  the network only provides layer 2 communication, and users must
+                  configure IP addresses for the pods. Port security only prevents
+                  MAC spoofing."
+                type: string
+            required:
+            - name
             type: object
         type: object
     served: true
     storage: true
-    subresources:
-      status: {}
