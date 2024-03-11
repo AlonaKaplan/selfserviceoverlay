@@ -28,6 +28,10 @@ OVN_K8S_REPO_COMMIT="b4388c5a8766e35d5ae5d63833fd7ee00cf0592f"
 OVN_K8S_REPO_PATH="${SCRIPT_PATH}/_ovn-k8s/"
 OVN_K8S_KIND="${SCRIPT_PATH}/_ovn-k8s/contrib"
 
+KIND=${KIND:-./kind}
+KIND_VERSION=${KIND_VERSION:-v0.20.0}
+CLUSTER_NAME=${CLUSTER_NAME:-kind}
+
 if [ ! -d ${OVN_K8S_REPO_PATH} ]; then
     git clone ${OVN_K8S_REPO} --branch ${OVN_K8S_BRANCH} --single-branch  ${OVN_K8S_REPO_PATH}
     pushd ${OVN_K8S_REPO_PATH}
@@ -35,21 +39,39 @@ if [ ! -d ${OVN_K8S_REPO_PATH} ]; then
     popd
 fi
 
+install_kind(){
+    if [ ! -f "${KIND}" ]; then
+        curl -Lo "${KIND}" https://kind.sigs.k8s.io/dl/"${KIND_VERSION}"/kind-linux-amd64
+        chmod +x "${KIND}"
+        echo "kind installed successfully at ${KIND}"
+        "${KIND}" version
+    fi
+}
+
 cluster_up() {
+    install_kind
+
     (
+        export PATH=$PATH:$(dirname ${KIND})
+
         cd "${OVN_K8S_KIND}"
         ./kind.sh \
             --experimental-provider ${OCI_BIN} \
+            --cluster-name ${CLUSTER_NAME} \
             --num-workers 0 \
             --multi-network-enable \
-            $(NULL)
     )
 }
 
 cluster_down() {
     (
+        export PATH=$PATH:$(dirname ${KIND})
+
         cd "${OVN_K8S_KIND}"
-        ./kind.sh --experimental-provider ${OCI_BIN} --delete
+        ./kind.sh \
+            --experimental-provider ${OCI_BIN} \
+            --cluster-name ${CLUSTER_NAME} \
+            --delete
     )
 }
 
