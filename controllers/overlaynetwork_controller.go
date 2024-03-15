@@ -18,7 +18,11 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,7 +69,10 @@ func (r *OverlayNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
-	desiredNetAttachDef := renderNetAttachDef(overlayNetwork)
+	desiredNetAttachDef, err := renderNetAttachDef(overlayNetwork)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to render NetworkAttachmentDefinition for OverlayNetwork %q: %v", req.NamespacedName, err)
+	}
 
 	actualNetAttachDef := &netv1.NetworkAttachmentDefinition{}
 	actualKey := client.ObjectKey{Namespace: overlayNetwork.Namespace, Name: overlayNetwork.Name}
@@ -97,11 +104,42 @@ func (r *OverlayNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func renderNetAttachDef(overlayNet *selfservicev1.OverlayNetwork) *netv1.NetworkAttachmentDefinition {
+func renderNetAttachDef(overlayNet *selfservicev1.OverlayNetwork) (*netv1.NetworkAttachmentDefinition, error) {
 	const netAttachDefKind = "NetworkAttachmentDefinition"
 	const netAttachDefAPIVer = "v1"
-	// TODO: set config
-	netConf := ""
+
+	cniNetConf := map[string]interface{}{
+		"cniVersion":       "0.3.1",
+		"type":             "ovn-k8s-cni-overlay",
+		"name":             overlayNet.Namespace + "-" + overlayNet.Spec.Name,
+		"netAttachDefName": overlayNet.Namespace + "/" + overlayNet.Name,
+		"topology":         "layer2",
+	}
+
+	if overlayNet.Spec.Mtu != "" {
+		mtu, err := strconv.Atoi(overlayNet.Spec.Mtu)
+		if err != nil {
+			return nil, err
+		}
+		cniNetConf["mtu"] = mtu
+	}
+	if overlayNet.Spec.Subnets != "" {
+		if err := validateSubnets(overlayNet.Spec.Subnets); err != nil {
+			return nil, err
+		}
+		cniNetConf["subnets"] = overlayNet.Spec.Subnets
+	}
+	if overlayNet.Spec.ExcludeSubnets != "" {
+		if err := validateSubnets(overlayNet.Spec.ExcludeSubnets); err != nil {
+			return nil, err
+		}
+		cniNetConf["excludeSubnets"] = overlayNet.Spec.ExcludeSubnets
+	}
+
+	cniNetConfRaw, err := json.Marshal(cniNetConf)
+	if err != nil {
+		return nil, err
+	}
 
 	blockOwnerDeletion := true
 	return &netv1.NetworkAttachmentDefinition{
@@ -123,9 +161,19 @@ func renderNetAttachDef(overlayNet *selfservicev1.OverlayNetwork) *netv1.Network
 			},
 		},
 		Spec: netv1.NetworkAttachmentDefinitionSpec{
-			Config: netConf,
+			Config: string(cniNetConfRaw),
 		},
+	}, nil
+}
+
+func validateSubnets(subnets string) error {
+	subentsSlice := strings.Split(subnets, ",")
+	for _, subent := range subentsSlice {
+		if _, _, err := net.ParseCIDR(subent); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func hasOwnerReferenceWithUID(uid types.UID, ownerRefs []metav1.OwnerReference) bool {
