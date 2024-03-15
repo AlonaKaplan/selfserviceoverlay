@@ -273,3 +273,8 @@ kind-push:
 
 .PHONY: cluster-sync
 cluster-sync: undeploy uninstall manifests generate fmt vet docker-build kind-push install deploy
+
+.PHONY: vendor
+vendor:
+	go mod tidy
+	go mod vendor
