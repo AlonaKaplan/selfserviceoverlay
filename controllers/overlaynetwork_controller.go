@@ -18,13 +18,21 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 
 	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1"
+
+	"github.com/AlonaKaplan/selfserviceoverlay/pkg/render"
 )
 
 // OverlayNetworkReconciler reconciles a OverlayNetwork object
@@ -47,9 +55,42 @@ type OverlayNetworkReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *OverlayNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	overlayNetwork := &selfservicev1.OverlayNetwork{}
+	if err := r.Client.Get(ctx, req.NamespacedName, overlayNetwork); err != nil {
+		if !errors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("failed to get OverlayNetwork %q: %v", req.NamespacedName, err)
+		}
+		return ctrl.Result{}, nil
+	}
 
-	// TODO(user): your logic here
+	if overlayNetwork.DeletionTimestamp != nil {
+		return ctrl.Result{}, nil
+	}
+
+	desiredNetAttachDef, err := render.NetAttachDef(overlayNetwork)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to render NetworkAttachmentDefinition for OverlayNetwork %q: %v", req.NamespacedName, err)
+	}
+
+	actualNetAttachDef := &netv1.NetworkAttachmentDefinition{}
+	actualKey := client.ObjectKey{Namespace: overlayNetwork.Namespace, Name: overlayNetwork.Name}
+	if gerr := r.Client.Get(ctx, actualKey, actualNetAttachDef); gerr != nil {
+		if !errors.IsNotFound(gerr) {
+			return ctrl.Result{}, fmt.Errorf("failed to get NetworkAttachmetDefinition: %v", gerr)
+		}
+		if cerr := r.Client.Create(ctx, desiredNetAttachDef); cerr != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to create NetworkAttachmetDefinition: %v", cerr)
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if !hasOwnerReferenceWithUID(overlayNetwork.UID, actualNetAttachDef.OwnerReferences) {
+		return ctrl.Result{}, fmt.Errorf("foreign NetworkAttachmetDefinition with the desired name already exist")
+	}
+
+	if actualNetAttachDef.Spec.Config != desiredNetAttachDef.Spec.Config {
+		return ctrl.Result{}, fmt.Errorf("mutating NetworkAttachmetDefinition is not possible")
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -59,4 +100,13 @@ func (r *OverlayNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&selfservicev1.OverlayNetwork{}).
 		Complete(r)
+}
+
+func hasOwnerReferenceWithUID(uid types.UID, ownerRefs []metav1.OwnerReference) bool {
+	for _, ownerRef := range ownerRefs {
+		if ownerRef.UID == uid {
+			return true
+		}
+	}
+	return false
 }

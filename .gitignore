@@ -29,3 +29,6 @@ go.work
 
 # ovn-org/ovn-kubernetes repo clone
 automation/_ovn-k8s/
+
+# Go mod vendor
+vendor
