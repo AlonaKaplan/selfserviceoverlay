@@ -32,3 +32,6 @@ automation/_ovn-k8s/
 
 # Go mod vendor
 vendor
+
+# go test cover-profile
+./cover.out
