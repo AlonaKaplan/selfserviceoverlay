@@ -138,7 +138,7 @@ cluster-up: $(LOCALBIN)
 cluster-down: $(LOCALBIN)
 	./automation/cluster.sh --down
 
-IMAGE_TAR = "./bin/img.tar"
+IMAGE_TAR = $(LOCALBIN)/img.tar
 .PHONY: kind-push
 kind-push:
 	$(CONTAINER_TOOL) save ${IMG} -o ${IMAGE_TAR}
