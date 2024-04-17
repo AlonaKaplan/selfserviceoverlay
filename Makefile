@@ -131,11 +131,11 @@ export KIND ?= $(LOCALBIN)/kind
 export CLUSTER_NAME ?= ovn
 
 .PHONY: cluster-up
-cluster-up:
+cluster-up: $(LOCALBIN)
 	./automation/cluster.sh --up
 
 .PHONY: cluster-down
-cluster-down:
+cluster-down: $(LOCALBIN)
 	./automation/cluster.sh --down
 
 IMAGE_TAR = "./bin/img.tar"
