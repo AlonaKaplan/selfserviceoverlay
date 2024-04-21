@@ -1,4 +1,4 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- self.service_v1_overlaynetwork.yaml
+- self.service_v1alpha1_overlaynetwork.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -30,7 +30,7 @@ import (
 
 	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 
-	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1"
+	"github.com/AlonaKaplan/selfserviceoverlay/api/v1alpha1"
 
 	"github.com/AlonaKaplan/selfserviceoverlay/pkg/render"
 )
@@ -55,7 +55,7 @@ type OverlayNetworkReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *OverlayNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	overlayNetwork := &selfservicev1.OverlayNetwork{}
+	overlayNetwork := &v1alpha1.OverlayNetwork{}
 	if err := r.Client.Get(ctx, req.NamespacedName, overlayNetwork); err != nil {
 		if !errors.IsNotFound(err) {
 			return ctrl.Result{}, fmt.Errorf("failed to get OverlayNetwork %q: %v", req.NamespacedName, err)
@@ -98,7 +98,7 @@ func (r *OverlayNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // SetupWithManager sets up the controller with the Manager.
 func (r *OverlayNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&selfservicev1.OverlayNetwork{}).
+		For(&v1alpha1.OverlayNetwork{}).
 		Complete(r)
 }
 
