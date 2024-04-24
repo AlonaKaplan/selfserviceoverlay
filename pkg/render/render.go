@@ -10,10 +10,10 @@ import (
 
 	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 
-	selfservicev1 "github.com/AlonaKaplan/selfserviceoverlay/api/v1"
+	"github.com/AlonaKaplan/selfserviceoverlay/api/v1alpha1"
 )
 
-func NetAttachDef(overlayNet *selfservicev1.OverlayNetwork) (*netv1.NetworkAttachmentDefinition, error) {
+func NetAttachDef(overlayNet *v1alpha1.OverlayNetwork) (*netv1.NetworkAttachmentDefinition, error) {
 	cniNetConf, err := renderCNINetworkConfig(overlayNet)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func NetAttachDef(overlayNet *selfservicev1.OverlayNetwork) (*netv1.NetworkAttac
 	}, nil
 }
 
-func renderCNINetworkConfig(overlayNet *selfservicev1.OverlayNetwork) (map[string]interface{}, error) {
+func renderCNINetworkConfig(overlayNet *v1alpha1.OverlayNetwork) (map[string]interface{}, error) {
 	const (
 		cniVersionKey       = "cniVersion"
 		cniVersion          = "0.3.1"

@@ -1,4 +1,4 @@
-apiVersion: self.service.ovn.org/v1
+apiVersion: self.service.ovn.org/v1alpha1
 kind: OverlayNetwork
 metadata:
   name: overlaynetwork-sample
